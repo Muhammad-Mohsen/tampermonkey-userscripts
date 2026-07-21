@@ -51,7 +51,7 @@
 			a:has([aria-label="Video player"] [aria-label="Tags"]) ::-webkit-media-controls-panel { padding-inline: 40px; }
 
 			/* DOWNLOAD BUTTON + VIDEO MARKER */
-			button.download-button, .video-marker {
+			button.download-button, .video-marker, button.external-button {
 				position: absolute;
 				inset: 0 0 auto auto;
 				display: flex;
@@ -90,6 +90,13 @@
 					margin-top: 4px;
 				}
 			}
+			button.external-button {
+				inset: 0 40px auto auto;
+
+				&::before {
+					content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' viewBox='0 0 24 24' fill='none' stroke='%23FFF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-external-link-icon lucide-external-link'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+				}
+			}
 
 			@keyframes spin {
 				to { transform: rotate(360deg); }
@@ -110,6 +117,7 @@
 		};
 	}
 
+	// downloading (thanks to Instagram Reels Premium Media Controller by Uygar)
 	async function downloadUrl(url, filename) {
 		try {
 			const res = await fetch(url, { credentials: 'omit' });
@@ -126,6 +134,7 @@
 		}
 	}
 
+	// video download
 	function shortcodeToMediaId(sc) {
 		const SC_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
@@ -177,6 +186,8 @@
 			toast('This reel could not be downloaded directly (IG restriction / login required)');
 		}
 	}
+
+	// image download
 	function downloadImg(img) {
 		// Pick best resolution source from srcset
 		function pickBestImageSrc(img) {
@@ -212,6 +223,8 @@
 			// feed header...lmao!!!!
 			if (!['/stories/', '/reels/'].some((path) => location.href.includes(path))) {
 				setTimeout(() => {
+					if (video.closest('[aria-modal="true"]')) return; // dialogs...have no header!
+
 					const article = video.closest('article');
 					const container = article.firstChild.firstChild;
 					const header = article.firstChild.firstChild.firstChild.firstChild;
@@ -221,7 +234,7 @@
 			}
 
 			// download button
-			const container = video.closest('a');
+			const container = video.closest('a') || video.parentElement.parentElement;
 			container?.removeAttribute('href');
 
 			const downloadBtn = document.createElement('button');
@@ -244,16 +257,24 @@
 			img.setAttribute('enhanced', '');
 
 			// ignore...
-			if (img.clientWidth < 400 && img.clientHeight < 400) return; // profile pictures + profile page thumbnails
-			if (img.closest('article')?.querySelector('video')) return; // video thumbnails
+			if (img.clientWidth < 400 || img.clientHeight < 400) return; // profile pictures + profile page thumbnails
+			if (img.parentElement.parentElement.parentElement.parentElement.querySelector('video')) return; // video thumbnails...lmao 2!!
 
 			const container = img.parentElement.parentElement;
 
+			// download button
 			const downloadBtn = document.createElement('button');
 			downloadBtn.classList.add('download-button');
 			downloadBtn.addEventListener('click', () => downloadImg(img));
-
 			container.appendChild(downloadBtn);
+
+			// external button
+			if (img.closest('[aria-modal="true"]')) {
+				const externalBtn = document.createElement('button');
+				externalBtn.classList.add('external-button');
+				externalBtn.addEventListener('click', () => window.open(location.href, '_blank'));
+				container.appendChild(externalBtn);
+			}
 		});
 	}
 
