@@ -6,7 +6,7 @@
 // @author       you
 // @match        https://www.instagram.com/*
 // @icon         https://www.google.com/s2/favicons?bb=1&domain=instagram.com
-// @run-at       document-idle
+// @run-at       document-start
 // @grant        none
 // ==/UserScript==
 
@@ -117,6 +117,25 @@
 		};
 	}
 
+	function allowBackgroundPlay() {
+		// Override document.hidden to always be false
+		Object.defineProperty(document, 'hidden', {
+			value: false,
+			writable: false
+		});
+
+		// Override document.visibilityState to always be "visible"
+		Object.defineProperty(document, 'visibilityState', {
+			value: 'visible',
+			writable: false
+		});
+
+		// Stop visibilitychange events from firing
+		document.addEventListener('visibilitychange', function(event) {
+			event.stopImmediatePropagation();
+		}, true); // The 'true' parameter ensures this runs during the capture phase
+	}
+
 	// downloading (thanks to Instagram Reels Premium Media Controller by Uygar)
 	async function downloadUrl(url, filename) {
 		try {
@@ -210,6 +229,7 @@
 	// main update loop
 	function update() {
 		// LOCATION
+		document.body.classList.remove('stories', 'reels');
 		if (location.href.includes('/stories/')) document.body.classList.add('stories');
 		else if (location.href.includes('/reels/')) document.body.classList.add('reels');
 
@@ -223,7 +243,7 @@
 			// feed header...lmao!!!!
 			if (!['/stories/', '/reels/'].some((path) => location.href.includes(path))) {
 				setTimeout(() => {
-					if (video.closest('[aria-modal="true"]')) return; // dialogs...have no header!
+					if (video.closest('[aria-modal="true"]')) return; // dialog
 
 					const article = video.closest('article');
 					const container = article.firstChild.firstChild;
@@ -258,7 +278,7 @@
 
 			// ignore...
 			if (img.clientWidth < 400 || img.clientHeight < 400) return; // profile pictures + profile page thumbnails
-			if (img.parentElement.parentElement.parentElement.parentElement.querySelector('video')) return; // video thumbnails...lmao 2!!
+			if (img.parentElement.parentElement.parentElement.parentElement.querySelector('video')) return; // video thumbnails...good lord!!
 
 			const container = img.parentElement.parentElement;
 
@@ -281,6 +301,7 @@
 	const init = () => {
 		injectStyles();
 		preventAutoplay();
+		allowBackgroundPlay();
 		setInterval(update, 1000);
 	};
 

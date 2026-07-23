@@ -6,6 +6,7 @@ This repository contains a bunch of tampermonkey userscripts that enhance the ex
 - prevent autoplay
 - video controls
 - image/video download
+- background playback
 
 ## TopGear
 - download button for the carousels
